@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MAG-RE | Capa 4</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero">
+        <p class="eyebrow">MAG-RE · Capa 4</p>
+        <h1>Actuador musical generativo adaptativo</h1>
+        <p class="lead">
+          Este prototipo traduce un estado afectivo actual y un objetivo de regulación
+          en parámetros musicales seguros y genera una intervención WAV reproducible.
+        </p>
+        <div class="notice">
+          Este prototipo no realiza diagnóstico ni tratamiento clínico; solo demuestra
+          una capa técnica de generación musical adaptativa.
+        </div>
+      </section>
+
+      <section class="panel">
+        <form id="generation-form">
+          <div class="grid two">
+            <fieldset>
+              <legend>Estado afectivo actual</legend>
+              <label>Arousal <input type="number" name="current_arousal" min="0" max="1" step="0.01" value="0.75" required /></label>
+              <label>Valence <input type="number" name="current_valence" min="0" max="1" step="0.01" value="0.30" required /></label>
+              <label>Stress <input type="number" name="current_stress" min="0" max="1" step="0.01" value="0.80" required /></label>
+              <label>Engagement <input type="number" name="current_engagement" min="0" max="1" step="0.01" value="0.40" required /></label>
+            </fieldset>
+
+            <fieldset>
+              <legend>Estado afectivo objetivo</legend>
+              <label>Arousal <input type="number" name="target_arousal" min="0" max="1" step="0.01" value="0.35" required /></label>
+              <label>Valence <input type="number" name="target_valence" min="0" max="1" step="0.01" value="0.65" required /></label>
+              <label>Stress <input type="number" name="target_stress" min="0" max="1" step="0.01" value="0.30" required /></label>
+              <label>Engagement <input type="number" name="target_engagement" min="0" max="1" step="0.01" value="0.60" required /></label>
+            </fieldset>
+          </div>
+
+          <div class="grid three compact">
+            <label>Duración (10-60 s)
+              <input type="number" name="duration_seconds" min="10" max="60" step="1" value="20" required />
+            </label>
+            <label>Semilla (opcional)
+              <input type="number" name="seed" step="1" placeholder="123" />
+            </label>
+            <label>Nombre de sesión (opcional)
+              <input type="text" name="session_name" maxlength="120" placeholder="prueba_001" />
+            </label>
+          </div>
+
+          <button type="submit" id="submit-button">Generar intervención musical</button>
+          <p id="status" class="status"></p>
+        </form>
+      </section>
+
+      <section id="result-panel" class="panel hidden">
+        <h2>Resultado</h2>
+        <div class="grid two">
+          <article>
+            <h3>Parámetros musicales</h3>
+            <pre id="parameters-output"></pre>
+          </article>
+          <article>
+            <h3>Audio generado</h3>
+            <audio id="audio-player" controls></audio>
+            <p><a id="download-link" href="#" download>Descargar WAV</a></p>
+          </article>
+        </div>
+
+        <article>
+          <h3>Metadatos JSON</h3>
+          <pre id="metadata-output"></pre>
+        </article>
+      </section>
+    </main>
+    <script src="/static/app.js"></script>
+  </body>
+</html>

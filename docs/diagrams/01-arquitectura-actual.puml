@@ -1,0 +1,52 @@
+@startuml
+title MAG-RE Capa 4 - Arquitectura actual
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam defaultFontName Arial
+
+actor Usuario
+
+package "Cliente local" {
+  [Navegador] as browser
+  [UI HTML/CSS/JavaScript\n/static] as ui
+  browser --> ui
+}
+
+package "Servidor FastAPI" {
+  [GET /\nPOST /api/generate\nGET /api/sessions] as api
+  [Controlador afectivo-musical\ncontroller.py] as controller
+  [Restricciones de seguridad\nsafety.py] as safety
+  [Motor de síntesis WAV\nmusic_engine.py] as engine
+  [Persistencia de sesiones\nstorage.py] as storage
+}
+
+database "SQLite\ndata/sessions.db" as db
+folder "WAV generados\noutputs/" as outputs
+
+Usuario --> browser
+ui --> api : HTTP JSON
+api --> controller : estado actual + objetivo
+controller --> safety : parámetros crudos\n+notas de generación
+safety --> engine : parámetros seguros
+engine --> outputs : escribe WAV mono\n44 100 Hz
+api --> storage : registra sesión\nentrada, parámetros, acciones y ruta
+storage --> db
+api --> ui : session_id, audio_url\ny metadatos
+browser --> outputs : reproduce/descarga WAV
+
+note bottom of controller
+  Reglas deterministas basadas en:
+  arousal, valence, stress y engagement.
+end note
+
+note bottom of safety
+  Limita BPM, volumen, brillo,
+  densidad y otros valores.
+end note
+
+note bottom of api
+  Flujo de una sola ejecución.
+  No hay sensor ni realimentación posterior.
+end note
+@enduml

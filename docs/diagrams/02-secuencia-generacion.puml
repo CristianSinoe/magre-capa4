@@ -1,0 +1,42 @@
+@startuml
+title MAG-RE Capa 4 - Secuencia de generación de una sesión
+
+skinparam shadowing false
+skinparam defaultFontName Arial
+autonumber
+
+actor Usuario
+participant "UI web\nstatic/app.js" as UI
+participant "FastAPI\napp/main.py" as API
+participant "Controlador\ncontroller.py" as Controller
+participant "Seguridad\nsafety.py" as Safety
+participant "Motor WAV\nmusic_engine.py" as Engine
+database "SQLite\nsessions.db" as DB
+collections "outputs/" as Output
+
+Usuario -> UI : Completa estados, duración, semilla y nombre
+UI -> API : POST /api/generate\nGenerateRequest JSON
+API -> Controller : compute_raw_parameters(current, target)
+Controller --> API : raw_parameters + generation_notes
+API -> Safety : apply_safety_constraints(raw, current, target)
+Safety --> API : safe_parameters + safety_actions
+API -> Engine : generate_wav(safe_parameters, duración, id, seed)
+Engine -> Engine : Construye pad + melodía + pulso
+Engine -> Engine : Aplica fades, normaliza y convierte a int16
+Engine -> Output : Escribe session_id_timestamp.wav
+Engine --> API : ruta WAV + detalles técnicos
+API -> DB : Guarda entrada, salida, acciones\ny metadatos de la sesión
+API --> UI : 200: session_id, audio_url, metadata
+UI -> Output : Carga WAV en reproductor
+UI --> Usuario : Muestra parámetros, metadatos y descarga
+
+alt Error durante la generación
+  API --> UI : 500 con detalle del error
+  UI --> Usuario : Muestra mensaje de error
+end
+
+note over API, DB
+  La sesión conserva parámetros crudos y seguros,
+  además de cada acción de seguridad aplicada.
+end note
+@enduml

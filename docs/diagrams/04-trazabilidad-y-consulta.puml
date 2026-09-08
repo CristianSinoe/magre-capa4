@@ -1,0 +1,60 @@
+@startuml trazabilidad-y-consulta
+allowmixing
+title MAG-RE Capa 4 - Trazabilidad y consulta de sesiones
+
+
+skinparam shadowing false
+skinparam defaultFontName Arial
+
+class "SessionRecord" as SessionRecord {
+  session_id: UUID hexadecimal
+  timestamp: fecha UTC
+  session_name: texto opcional
+  input_state: JSON
+  target_state: JSON
+  raw_parameters: JSON
+  safe_parameters: JSON
+  safety_actions: JSON
+  generation_notes: JSON
+  technical_details: JSON
+  output_wav_path: ruta HTTP
+}
+
+class "AffectiveState" as AffectiveState {
+  arousal: 0.0..1.0
+  valence: 0.0..1.0
+  stress: 0.0..1.0
+  engagement: 0.0..1.0
+}
+
+class "MusicalParameters" as MusicalParameters {
+  bpm
+  mode
+  note_density
+  brightness
+  volume
+  rhythmic_complexity
+  pad_intensity
+  melody_activity
+}
+
+database "Tabla sessions\nSQLite" as Sessions
+folder "Archivo WAV\noutputs/" as Wav
+
+SessionRecord *-- "1" AffectiveState : input_state
+SessionRecord *-- "1" AffectiveState : target_state
+SessionRecord *-- "1" MusicalParameters : raw_parameters
+SessionRecord *-- "1" MusicalParameters : safe_parameters
+SessionRecord --> Sessions : save_session()
+SessionRecord --> Wav : output_wav_path
+
+actor "Cliente" as Client
+Client --> Sessions : GET /api/sessions\nresúmenes ordenados por fecha
+Client --> Sessions : GET /api/sessions/{session_id}\nregistro completo
+
+note bottom of SessionRecord
+  Cada generación registra la intención de entrada,
+  las decisiones del controlador, las correcciones
+  de seguridad y la ruta del audio resultante.
+end note
+@enduml

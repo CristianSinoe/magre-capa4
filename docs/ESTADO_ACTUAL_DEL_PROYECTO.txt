@@ -1,0 +1,367 @@
+MAG-RE CAPA 4: ACTUADOR MUSICAL GENERATIVO ADAPTATIVO
+ESTADO ACTUAL DEL PROYECTO
+===============================================
+
+1. RESUMEN EJECUTIVO
+--------------------
+
+MAG-RE Capa 4 es un prototipo local funcional que implementa un actuador
+musical generativo parametrizable. Recibe un estado afectivo actual, un estado
+afectivo objetivo y una configuracion de sesion. A partir de ellos:
+
+1. Calcula parametros musicales con reglas explicables.
+2. Aplica limites de seguridad no clinicos.
+3. Sintetiza una pieza de audio WAV mono.
+4. Guarda entradas, decisiones, restricciones y metadatos en SQLite.
+5. Permite reproducir/descargar el WAV y consultar las sesiones por API.
+
+El alcance es una demostracion tecnica de la Capa 4 de MAG-RE. No realiza
+diagnostico psicologico, tratamiento clinico ni validacion de eficacia para
+regulacion emocional.
+
+
+2. ESTADO DE VERIFICACION
+-------------------------
+
+Fecha de esta verificacion: 2026-08-26.
+Directorio del proyecto: /home/sinoe/MAG_RE/magre-capa4
+
+Pruebas ejecutadas:
+  pytest
+
+Resultado:
+  8 pruebas aprobadas en 1.10 s.
+  Entorno que ejecuto las pruebas: Python 3.14.6 y pytest 9.1.1.
+
+Cobertura comprobada por las pruebas existentes:
+  - Limite maximo de BPM en 130.
+  - Limite maximo de volumen en 0.25.
+  - Limite de volumen de 0.18 ante estres actual alto.
+  - Registro de acciones de seguridad cuando hay correcciones.
+  - Menor BPM para un objetivo de arousal menor.
+  - Seleccion de modos asociados a valence alta o baja.
+  - Creacion de un WAV no vacio a 44 100 Hz.
+
+Las pruebas son unitarias. No hay actualmente pruebas automatizadas de la UI,
+de los endpoints HTTP completos, de SQLite, de concurrencia, de calidad
+perceptual del audio ni de resultados afectivos en personas.
+
+
+3. ARQUITECTURA IMPLEMENTADA
+----------------------------
+
+Cliente local
+  Navegador con interfaz HTML, CSS y JavaScript sin framework.
+
+Servidor local
+  FastAPI expone la UI, la API y los archivos WAV.
+
+Controlador afectivo-musical
+  app/controller.py transforma estados afectivos en parametros musicales
+  crudos, usando formulas y condiciones deterministas.
+
+Capa de seguridad
+  app/safety.py limita los parametros crudos y registra toda correccion en
+  safety_actions.
+
+Motor de musica
+  app/music_engine.py sintetiza un archivo WAV mono mediante NumPy y SciPy.
+
+Persistencia
+  app/storage.py guarda una sesion por generacion en SQLite.
+
+Archivos principales:
+  app/main.py          Aplicacion FastAPI y endpoints.
+  app/models.py        Modelos Pydantic y validacion de entradas.
+  app/config.py        Rutas, constantes y limites.
+  app/controller.py    Mapeo afectivo-musical explicable.
+  app/safety.py        Restricciones de seguridad.
+  app/music_engine.py  Sintesis de audio WAV.
+  app/storage.py       Inicializacion y consultas SQLite.
+  static/              Interfaz web.
+  tests/               Pruebas unitarias.
+  docs/diagrams/       Diagramas PlantUML de la implementacion actual.
+
+
+4. FLUJO DE UNA GENERACION
+--------------------------
+
+1. La persona captura los estados actual y objetivo en el navegador.
+2. La UI envia un POST /api/generate en formato JSON.
+3. FastAPI valida la solicitud con Pydantic.
+4. El controlador genera raw_parameters y generation_notes.
+5. La capa de seguridad produce safe_parameters y safety_actions.
+6. El motor sintetiza el WAV a partir de los parametros seguros.
+7. El sistema guarda un SessionRecord en data/sessions.db.
+8. La API devuelve session_id, audio_url y metadatos.
+9. La UI muestra los parametros, los metadatos y un reproductor de audio.
+
+El flujo es de una sola ejecucion. El sistema no mide el estado posterior de la
+persona ni modifica la musica de forma iterativa despues de reproducirla.
+
+
+5. ENTRADAS DEL SISTEMA
+-----------------------
+
+El modelo AffectiveState contiene cuatro valores de 0.0 a 1.0:
+
+  arousal      Nivel de activacion usado por el controlador.
+  valence      Dimension usada para elegir el modo musical.
+  stress       Factor que reduce intensidad y activa limites de seguridad.
+  engagement   Factor que permite mayor actividad melodica y variacion.
+
+La solicitud GenerateRequest acepta:
+
+  session_name       Texto opcional de hasta 120 caracteres.
+  duration_seconds   Entero entre 10 y 60 segundos. Predeterminado: 20.
+  seed               Entero opcional para controlar la aleatoriedad.
+  current_state      AffectiveState actual.
+  target_state       AffectiveState objetivo.
+
+La semilla controla el generador aleatorio del motor. Usar la misma semilla,
+los mismos parametros y el mismo motor permite reproducir las decisiones
+aleatorias de melodia y pulso; el nombre del archivo y la marca de tiempo
+siguen siendo distintos por sesion.
+
+
+6. PARAMETROS MUSICALES
+-----------------------
+
+El controlador produce los siguientes parametros:
+
+  bpm                   Tempo en pulsos por minuto.
+  mode                  Uno de major, minor, dorian o lydian.
+  note_density          Densidad de eventos musicales.
+  brightness            Mezcla entre osciladores seno y triangular.
+  volume                Amplitud final despues de normalizacion.
+  rhythmic_complexity   Probabilidad y duracion del pulso suave.
+  pad_intensity         Intensidad de la capa armonica sostenida.
+  melody_activity       Probabilidad de generar eventos melodicos.
+
+El modo se elige principalmente con la valence objetivo y, en algunos rangos,
+con la valence actual:
+
+  valence objetivo >= 0.70: lydian o major.
+  valence objetivo >= 0.45: major o dorian.
+  valence objetivo >= 0.25: dorian.
+  valence objetivo <  0.25: minor.
+
+El controlador aplica, entre otras, estas heuristicas:
+
+  - Si el arousal objetivo baja, reduce BPM, densidad y volumen.
+  - Si el arousal objetivo sube, aumenta BPM y actividad melodica.
+  - El estres actual reduce BPM, volumen, brillo y/o complejidad en casos de
+    relajacion.
+  - Engagement objetivo alto aumenta actividad melodica y complejidad.
+  - Objetivos relajados favorecen pad y menor complejidad ritmica.
+
+Estas relaciones son heuristicas tecnicas explicables. El repositorio no
+incluye bibliografia que permita atribuir sus coeficientes o umbrales a una
+fuente cientifica concreta, y el README las declara no clinicamente validadas.
+
+
+7. SEGURIDAD IMPLEMENTADA
+-------------------------
+
+La seguridad se aplica despues del controlador y antes de sintetizar el WAV.
+Los limites generales configurados son:
+
+  bpm                    60.0 a 130.0
+  volume                 0.05 a 0.25
+  brightness             0.10 a 0.80
+  note_density           0.50 a 3.00
+  rhythmic_complexity    0.10 a 1.00
+  pad_intensity          0.10 a 1.00
+  melody_activity        0.00 a 1.00
+
+Reglas contextuales adicionales:
+
+  - Si stress actual > 0.75, volume no supera 0.18.
+  - Si stress actual > 0.75, brightness no supera 0.55.
+  - Si hay estres alto y se busca bajar arousal, BPM no supera 110.
+  - Si arousal objetivo < 0.4, note_density no supera 1.5.
+
+Cada correccion se almacena como una cadena descriptiva en safety_actions.
+Estas restricciones son protecciones tecnicas de amplitud e intensidad; no
+constituyen seguridad clinica ni sustituyen valoracion profesional.
+
+
+8. SINTESIS DEL AUDIO
+---------------------
+
+El motor genera un unico archivo WAV mono, PCM int16, a 44 100 Hz.
+La pieza suma tres capas:
+
+  Pad armonico
+    Construye acordes con grados 1, 3 y 5 de la escala seleccionada, aplica
+    ADSR y rota los grados entre segmentos.
+
+  Melodia
+    Selecciona notas al azar de la escala usando la semilla opcional. La
+    frecuencia de eventos depende de BPM, densidad y actividad melodica.
+
+  Pulso suave
+    Inserta ruido breve con decaimiento en posiciones de beat. Su presencia y
+    duracion dependen de la complejidad ritmica y de la densidad.
+
+El timbre se crea mezclando una onda seno con una onda triangular. Al final,
+el motor aplica fade-in/fade-out de hasta un segundo, normaliza el pico global,
+aplica volume y escribe el archivo en outputs/.
+
+La tonalidad base predeterminada es C. El codigo tambien incluye A como
+frecuencia disponible, aunque el endpoint actual usa el valor predeterminado.
+
+
+9. API DISPONIBLE
+----------------
+
+GET /
+  Sirve static/index.html.
+
+POST /api/generate
+  Genera una intervencion y devuelve:
+  - session_id
+  - audio_url
+  - metadata: estados, parametros crudos y seguros, acciones de seguridad,
+    notas de generacion y detalles tecnicos.
+
+GET /api/sessions
+  Devuelve el resumen de sesiones, ordenadas por timestamp descendente.
+
+GET /api/sessions/{session_id}
+  Devuelve una sesion completa o un error HTTP 404 si no existe.
+
+/outputs/{archivo.wav}
+  Expone los WAV generados para reproduccion o descarga.
+
+
+10. PERSISTENCIA Y TRAZABILIDAD
+-------------------------------
+
+La base SQLite se crea automaticamente en:
+  data/sessions.db
+
+Cada sesion registra:
+
+  - session_id
+  - timestamp UTC
+  - session_name
+  - input_state y target_state
+  - raw_parameters y safe_parameters
+  - safety_actions
+  - generation_notes
+  - technical_details
+  - output_wav_path
+
+Esta informacion permite auditar la transformacion entre entrada afectiva,
+decision musical, restricciones aplicadas y archivo generado. No se guardan
+mediciones fisiologicas, evaluaciones subjetivas posteriores ni resultados
+clinicos.
+
+
+11. INTERFAZ WEB
+----------------
+
+La interfaz permite capturar los ocho valores afectivos, duracion, semilla y
+nombre opcional de sesion. Despues de generar, muestra:
+
+  - Parametros musicales seguros.
+  - Reproductor integrado de WAV.
+  - Enlace de descarga.
+  - Metadatos JSON completos.
+  - Advertencia de que no es diagnostico ni tratamiento clinico.
+
+La UI no incluye autenticacion, cuentas, perfiles, historiales visuales ni
+control de acceso.
+
+
+12. DIAGRAMAS DISPONIBLES
+-------------------------
+
+Los siguientes diagramas PlantUML documentan el comportamiento actual:
+
+  docs/diagrams/01-arquitectura-actual.puml
+  docs/diagrams/02-secuencia-generacion.puml
+  docs/diagrams/03-sintesis-audio.puml
+  docs/diagrams/04-trazabilidad-y-consulta.puml
+
+
+13. REQUISITOS Y EJECUCION LOCAL
+--------------------------------
+
+Requisitos recomendados por el proyecto:
+  - Python 3.11 o superior.
+  - pip.
+
+Dependencias fijadas en requirements.txt:
+  fastapi, uvicorn, pydantic, numpy, scipy y pytest.
+
+Instalacion y ejecucion:
+
+  cd /home/sinoe/MAG_RE/magre-capa4
+  python3 -m venv .venv
+  source .venv/bin/activate
+  pip install -r requirements.txt
+  python run.py
+
+Aplicacion local:
+  http://localhost:8000
+
+Pruebas:
+  pytest
+
+
+14. LIMITACIONES ACTUALES
+------------------------
+
+  - No hay modelo de inteligencia artificial entrenado.
+  - No hay MIDI ni generacion simbolica intermedia.
+  - No hay musica estereo, instrumentos muestreados ni produccion musical
+    avanzada; la sintesis usa osciladores y ruido.
+  - No hay sensor, biofeedback ni medicion posterior del estado afectivo.
+  - No es un sistema closed-loop completo: no compara una respuesta posterior
+    contra el objetivo ni ajusta iterativamente la intervencion.
+  - No existe validacion clinica, fisiologica, perceptual o experimental de
+    las heuristicas ni de los resultados de regulacion emocional.
+  - No hay bibliografia ni referencias cientificas dentro del repositorio.
+  - No hay autenticacion, multiusuario, almacenamiento remoto, colas,
+    streaming ni despliegue configurado.
+  - No se mide automaticamente si las propiedades perceptibles del WAV final
+    coinciden con la intencion de cada parametro solicitado.
+  - No hay baseline, benchmark, metricas comparativas, analisis estadistico ni
+    protocolo de evaluacion experimental versionado.
+
+
+15. ALCANCE DEFENDIBLE DEL AVANCE
+--------------------------------
+
+La afirmacion respaldada por este repositorio es:
+
+  Se implemento un prototipo ejecutable de la Capa 4 de MAG-RE que recibe un
+  estado afectivo actual y un objetivo, produce parametros musicales mediante
+  reglas explicables, aplica restricciones tecnicas de seguridad, sintetiza un
+  WAV reproducible mediante semilla y conserva trazabilidad local de cada
+  decision.
+
+No es defendible afirmar, solo desde este codigo, que el prototipo regula
+emociones, induce un estado afectivo especifico, produce efectos fisiologicos
+predecibles, sustituye una intervencion profesional o ha sido validado en
+personas.
+
+
+16. SIGUIENTE NIVEL DE MADUREZ SUGERIDO
+---------------------------------------
+
+Para evolucionar el proyecto sin ampliar indebidamente sus afirmaciones:
+
+  1. Agregar pruebas de integracion para los endpoints y SQLite.
+  2. Versionar perfiles de reglas y guardar la version de configuracion por
+     sesion.
+  3. Medir propiedades acusticas del WAV final y compararlas contra los
+     parametros solicitados.
+  4. Definir un baseline y metricas de comparacion reproducibles.
+  5. Incorporar evaluacion perceptual con protocolo, consentimiento y analisis
+     de amenazas a la validez.
+  6. Solo con el marco correspondiente, integrar medicion de estado posterior
+     para construir un ciclo de control real.
+

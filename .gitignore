@@ -1,0 +1,32 @@
+# Python bytecode and test tooling
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Local virtual environments and editor files
+.venv/
+venv/
+env/
+.env
+.env.*
+.vscode/
+.idea/
+
+# Runtime data and generated audio
+data/*
+!data/.gitkeep
+outputs/*
+!outputs/.gitkeep
+out/
+
+# Generated or binary documentation artifacts
+docs/*.zip
+docs/*.pdf
+
+# Operating system files
+.DS_Store
+Thumbs.db

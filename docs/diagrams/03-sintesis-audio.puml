@@ -1,0 +1,44 @@
+@startuml
+title MAG-RE Capa 4 - Flujo interno de síntesis de audio
+
+skinparam shadowing false
+skinparam defaultFontName Arial
+
+start
+:Recibe MusicalParameters seguros;
+:Inicializa RNG con seed opcional;
+
+fork
+  :Construye pad armónico;
+  :Selecciona escala según mode;
+  :Forma acordes rotando grados 1, 3 y 5;
+  :Mezcla seno y triangular\nsegún brightness;
+  :Aplica envolvente ADSR;
+  :Escala con pad_intensity;
+fork again
+  :Construye melodía;
+  :Calcula duración y separación\ncon BPM, densidad y actividad;
+  :Selecciona notas aleatorias de la escala;
+  :Aplica oscilador y ADSR;
+fork again
+  :Construye pulso suave;
+  :Programa eventos al ritmo de BPM;
+  :Genera ruido con decaimiento;
+  :Condiciona probabilidad y duración\npor complejidad rítmica;
+end fork
+
+:Suma pad + melodía + pulso;
+:Aplica fade-in y fade-out de hasta 1 s;
+:Normaliza el pico global;
+:Aplica volume;
+:Convierte muestras a PCM int16;
+:Escribe WAV mono a 44 100 Hz;
+:Devuelve ruta y detalles técnicos;
+stop
+
+note right
+  El motor no analiza el WAV resultante
+  para comprobar que la percepción obtenida
+  coincide con los parámetros solicitados.
+end note
+@enduml
