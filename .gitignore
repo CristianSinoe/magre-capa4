@@ -15,6 +15,7 @@ env/
 .env.*
 .vscode/
 .idea/
+docs/.obsidian/
 
 # Runtime data and generated audio
 data/*
