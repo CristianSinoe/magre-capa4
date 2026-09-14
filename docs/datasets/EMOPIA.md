@@ -49,3 +49,41 @@ data/raw/EMOPIA/EMOPIA_1.0/
 ├── label.csv               # Mapeo principal: ID de archivo -> Cuadrante Emocional -> YouTube ID
 ├── metadata_by_song.csv    # Registro agrupado por pista de origen
 └── README.md               # Documentación y términos del dataset
+
+---
+
+## Día 2: Análisis Detallado de Estructura, IDs y Metadatos
+
+**Categorías Emocionales**
+El dataset se organiza en 4 cuadrantes basados en el modelo Arousal-Valence de Russell:
+* **Q1 (High Valence, High Arousal):** Estado de ánimo alegre, eufórico o festivo.
+* **Q2 (Low Valence, High Arousal):** Estado de ánimo tenso, enojado o dramático.
+* **Q3 (Low Valence, Low Arousal):** Estado de ánimo triste, melancólico o sombrío.
+* **Q4 (High Valence, Low Arousal):** Estado de ánimo calmado, relajante o sereno.
+
+---
+
+**Cantidad de Archivos y Ubicación**
+* **Ruta Relativa:** `data/raw/EMOPIA/EMOPIA_1.0/`
+* **Ubicación MIDI:** `data/raw/EMOPIA/EMOPIA_1.0/midis/`
+* **Total de Clips MIDI:** 1,087 archivos `.mid`
+* **Canciones Fuente:** 387 canciones de piano pop extraídas de YouTube.
+
+---
+
+**Nomenclatura y Sintaxis de IDs**
+Cada archivo en `midis/` sigue el esquema: `{Cuadrante}_{YouTube_ID}_{Número_de_Clip}.mid`
+
+Ejemplos de IDs reales:
+* `Q1_2Z9Sjl131jA_11.mid` (Cuadrante Q1, Canción YouTube `2Z9Sjl131jA`, Clip 11)
+* `Q2_8mK2pL09q_03.mid` (Cuadrante Q2, Canción YouTube `8mK2pL09q`, Clip 03)
+* `Q3_x912MkaLq_01.mid` (Cuadrante Q3, Canción YouTube `x912MkaLq`, Clip 01)
+* `Q4_pL09aK21z_05.mid` (Cuadrante Q4, Canción YouTube `pL09aK21z`, Clip 05)
+
+---
+
+**Etiquetas y Mapeo en label.csv**
+El archivo `label.csv` actúa como el índice principal de etiquetas con los siguientes campos:
+* **input / filename:** Nombre base del clip MIDI.
+* **emo_class / quadrant:** Cuadrante asignado (1, 2, 3 o 4).
+* **YouTube_ID:** Identificador único del video fuente.
