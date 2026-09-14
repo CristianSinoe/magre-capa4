@@ -49,7 +49,7 @@ data/raw/EMOPIA/EMOPIA_1.0/
 ├── label.csv               # Mapeo principal: ID de archivo -> Cuadrante Emocional -> YouTube ID
 ├── metadata_by_song.csv    # Registro agrupado por pista de origen
 └── README.md               # Documentación y términos del dataset
-
+```
 ---
 
 ## Día 2: Análisis Detallado de Estructura, IDs y Metadatos
